@@ -97,7 +97,7 @@ google_analytics_js = """
 <!-- Global site tag (gtag.js) - Google Analytics -->
     <script
       async
-      src="https://www.googletagmanager.com/gtag/js?id=UA-168384497-1"
+      src="https://www.googletagmanager.com/gtag/js?id=G-8F86REFZP6"
     ></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -105,7 +105,7 @@ google_analytics_js = """
         dataLayer.push(arguments);
       }
       gtag("js", new Date());
-      gtag("config", "UA-168384497-1");
+      gtag("config", "G-8F86REFZP6");
     </script>
     """
 st.components.v1.html(google_analytics_js)
