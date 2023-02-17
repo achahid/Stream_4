@@ -285,6 +285,8 @@ def CLUSTERING_TRANSFOMERS_K_MEANS(processed_df, long_tail_df, short_tail_df,clu
 
     clustered_sentences = {}
     clustered_sentences_id = {}
+    LABELS ={}
+    dic = {}
 
     for sentence_id, cluster_id in enumerate(cluster_assignment):
         if cluster_id not in clustered_sentences:
@@ -311,9 +313,9 @@ def CLUSTERING_TRANSFOMERS_K_MEANS(processed_df, long_tail_df, short_tail_df,clu
     df_results['id'] = df_id['value'].astype(int)
 
     for num_cl in range(clusters_amount + 1):
-        keyword_label = labelling_clusters(df_results, cluster_num=clusters_amount, n=2)
+        keyword_label = labelling_clusters(df_results, cluster_num=num_cl, n=2)
         cl_lables = ''.join(keyword_label)
-        df_results.loc[df_results.cluster == clusters_amount, 'labels'] = cl_lables
+        df_results.loc[df_results.cluster == num_cl, 'labels'] = cl_lables
 
     sentences1 = df_results.labels.to_list()
     sentences2 = df_results.keyword_eng.to_list()
@@ -344,11 +346,11 @@ def CLUSTERING_TRANSFOMERS_K_MEANS(processed_df, long_tail_df, short_tail_df,clu
     # Adding columns van original data to the results
     df_org = processed_df.drop(['keyword_eng'], axis=1)
     final_clusters = final_clusters.merge(df_org, on='id', how='left')
-    LABELS  = A.index.values
+    LABELS[clusters_amount]  = A.index.values
+    dic[clusters_amount] = final_clusters
 
 
-
-    return (final_clusters, LABELS)
+    return (dic, LABELS)
 
 def re_classification(df, cut_off):
     """
@@ -753,13 +755,11 @@ if st.session_state["authentication_status"]:
 
             long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
             max_cluster = np.trunc(keywords_df.shape[0] * 0.1).astype(int)
-            min_cluster = np.trunc(max_cluster / 2).astype(int)
-            steps = np.trunc((max_cluster - min_cluster) / 3).astype(int)
             cut_off = 0.5
 
 
             data_list, labs = CLUSTERING_TRANSFOMERS_K_MEANS(processed_data, long_tail_df, short_tail_df,
-                                                             clusters_amount=max_cluster,  cutoff = cut_off)
+                                                             clusters_amount = max_cluster, cutoff = cut_off)
 
             preffix = 'CLUSTER_id_'
             new_dict = {(preffix + str(key)): value for key, value in data_list.items()}
