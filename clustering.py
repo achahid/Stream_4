@@ -35,8 +35,7 @@ from io import BytesIO
 
 import streamlit as st
 
-# model_name = 'all-MiniLM-L6-v2'
-# model = SentenceTransformer(model_name)
+
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
@@ -266,7 +265,7 @@ def CLUSTERING_K_MEANS(processed_df, long_tail_df, short_tail_df, start_cluster,
 
     return (dic,LABELS)
 
-def CLUSTERING_TRANSFOMERS_K_MEANS(processed_df, long_tail_df, short_tail_df, start_cluster, end_cluster, steps, cutoff):
+def CLUSTERING_TRANSFOMERS_K_MEANS(processed_df, long_tail_df, short_tail_df,clusters_amount,cutoff):
 
 
     ID = long_tail_df.id.to_list()
@@ -277,89 +276,80 @@ def CLUSTERING_TRANSFOMERS_K_MEANS(processed_df, long_tail_df, short_tail_df, st
     vectorizer_cv = CountVectorizer(analyzer='word')
     X_cv = vectorizer_cv.fit_transform(textlist_stem)
 
-    dic = {}
-    LABELS = {}
+    kmeans = KMeans(n_clusters=clusters_amount, random_state=10)
+    kmeans.fit(X_cv)
+    result = pd.concat([text_data, pd.DataFrame(X_cv.toarray(), columns=vectorizer_cv.get_feature_names_out())],
+                       axis=1)
+    result['cluster'] = kmeans.predict(X_cv)
+    cluster_assignment = result.cluster
+
+    clustered_sentences = {}
+    clustered_sentences_id = {}
+
+    for sentence_id, cluster_id in enumerate(cluster_assignment):
+        if cluster_id not in clustered_sentences:
+            clustered_sentences[cluster_id] = []
+
+        if cluster_id not in clustered_sentences_id:
+            clustered_sentences_id[cluster_id] = []
+
+        clustered_sentences[cluster_id].append(textlist[sentence_id])
+        clustered_sentences_id[cluster_id].append(ID[sentence_id])
 
 
-    for cl_num in range(start_cluster, end_cluster, steps):
-        try:
+    your_df_from_dict = pd.DataFrame.from_dict(clustered_sentences, orient='index')
+    dft = your_df_from_dict.transpose()
+    df_results = pd.melt(dft, value_vars=dft.columns)
+    df_results.dropna(inplace=True)
+    df_results.rename(columns={'variable': 'cluster', 'value': 'keyword_eng'}, inplace=True)
 
-            kmeans = KMeans(n_clusters=cl_num, random_state=10)
-            kmeans.fit(X_cv)
-            result = pd.concat([text_data, pd.DataFrame(X_cv.toarray(), columns=vectorizer_cv.get_feature_names_out())],
-                               axis=1)
-            result['cluster'] = kmeans.predict(X_cv)
-            cluster_assignment = result.cluster
+    your_id = pd.DataFrame.from_dict(clustered_sentences_id, orient='index')
+    dft_id = your_id.transpose()
+    df_id = pd.melt(dft_id, value_vars=dft.columns)
+    df_id.dropna(inplace=True)
 
-            clustered_sentences = {}
-            clustered_sentences_id = {}
+    df_results['id'] = df_id['value'].astype(int)
 
-            for sentence_id, cluster_id in enumerate(cluster_assignment):
-                if cluster_id not in clustered_sentences:
-                    clustered_sentences[cluster_id] = []
+    for num_cl in range(cl_num + 1):
+        keyword_label = labelling_clusters(df_results, cluster_num=num_cl, n=2)
+        cl_lables = ''.join(keyword_label)
+        df_results.loc[df_results.cluster == num_cl, 'labels'] = cl_lables
 
-                if cluster_id not in clustered_sentences_id:
-                    clustered_sentences_id[cluster_id] = []
+    sentences1 = df_results.labels.to_list()
+    sentences2 = df_results.keyword_eng.to_list()
 
-                clustered_sentences[cluster_id].append(textlist[sentence_id])
-                clustered_sentences_id[cluster_id].append(ID[sentence_id])
+    # Compute embedding for both lists
+    embeddings1 = model.encode(sentences1, convert_to_tensor=True)
+    embeddings2 = model.encode(sentences2, convert_to_tensor=True)
+
+    # Compute cosine-similarities
+    cosine_scores = util.cos_sim(embeddings1, embeddings2)
+    y = []
+    # Output the pairs with their score
+    for i in range(len(sentences1)):
+        y.append(cosine_scores[i][i].item())
+
+    df_results['semantic_score'] = y
+    df_results.drop(['cluster'], inplace=True, axis=1)
+    labels = df_results.labels.unique()
+
+    df_clusters = clusters_generator_cosine(short_tail_df, labels=labels)
+    clusters_short = df_clusters[df_results.columns.values.tolist()]
+    df_clusters_all = pd.concat([df_results, clusters_short], ignore_index=True)
+    # Generating some statistics:
+    z = df_clusters_all.groupby(['labels'])['semantic_score'].mean()
+    A = z[z < cutoff]
+
+    final_clusters = topics_generator(df=long_tail_df, df_clusters=df_clusters_all, clusters_labels=labels)
+    # Adding columns van original data to the results
+    df_org = processed_df.drop(['keyword_eng'], axis=1)
+    final_clusters = final_clusters.merge(df_org, on='id', how='left')
+    dic  = final_clusters
+    LABELS  = A.index.values
 
 
-            your_df_from_dict = pd.DataFrame.from_dict(clustered_sentences, orient='index')
-            dft = your_df_from_dict.transpose()
-            df_results = pd.melt(dft, value_vars=dft.columns)
-            df_results.dropna(inplace=True)
-            df_results.rename(columns={'variable': 'cluster', 'value': 'keyword_eng'}, inplace=True)
 
-            your_id = pd.DataFrame.from_dict(clustered_sentences_id, orient='index')
-            dft_id = your_id.transpose()
-            df_id = pd.melt(dft_id, value_vars=dft.columns)
-            df_id.dropna(inplace=True)
-
-            df_results['id'] = df_id['value'].astype(int)
-
-            for num_cl in range(cl_num + 1):
-                keyword_label = labelling_clusters(df_results, cluster_num=num_cl, n=2)
-                cl_lables = ''.join(keyword_label)
-                df_results.loc[df_results.cluster == num_cl, 'labels'] = cl_lables
-
-            sentences1 = df_results.labels.to_list()
-            sentences2 = df_results.keyword_eng.to_list()
-
-            # Compute embedding for both lists
-            embeddings1 = model.encode(sentences1, convert_to_tensor=True)
-            embeddings2 = model.encode(sentences2, convert_to_tensor=True)
-
-            # Compute cosine-similarities
-            cosine_scores = util.cos_sim(embeddings1, embeddings2)
-            y = []
-            # Output the pairs with their score
-            for i in range(len(sentences1)):
-                y.append(cosine_scores[i][i].item())
-
-            df_results['semantic_score'] = y
-            df_results.drop(['cluster'], inplace=True, axis=1)
-            labels = df_results.labels.unique()
-
-            df_clusters = clusters_generator_cosine(short_tail_df, labels=labels)
-            clusters_short = df_clusters[df_results.columns.values.tolist()]
-            df_clusters_all = pd.concat([df_results, clusters_short], ignore_index=True)
-            # Generating some statistics:
-            z = df_clusters_all.groupby(['labels'])['semantic_score'].mean()
-            A = z[z < cutoff]
-
-            final_clusters = topics_generator(df=long_tail_df, df_clusters=df_clusters_all, clusters_labels=labels)
-            # Adding columns van original data to the results
-            df_org = processed_df.drop(['keyword_eng'], axis=1)
-            final_clusters = final_clusters.merge(df_org, on='id', how='left')
-            dic[cl_num] = final_clusters
-            LABELS[cl_num] = A.index.values
-
-        except Exception as e:
-            print(e)
-            continue
-
-    return (dic, LABELS)
+    return (final_clusters, LABELS)
 
 def re_classification(df, cut_off):
     """
@@ -769,8 +759,8 @@ if st.session_state["authentication_status"]:
             cut_off = 0.5
 
 
-            data_list, labs = CLUSTERING_TRANSFOMERS_K_MEANS(processed_data, long_tail_df, short_tail_df, start_cluster=min_cluster,
-                                           end_cluster = max_cluster, steps = steps, cutoff = cut_off)
+            data_list, labs = CLUSTERING_TRANSFOMERS_K_MEANS(processed_data, long_tail_df, short_tail_df,
+                                                             clusters_amount=max_cluster,  cutoff = cut_off)
 
             preffix = 'CLUSTER_id_'
             new_dict = {(preffix + str(key)): value for key, value in data_list.items()}
