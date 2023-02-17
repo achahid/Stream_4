@@ -310,10 +310,10 @@ def CLUSTERING_TRANSFOMERS_K_MEANS(processed_df, long_tail_df, short_tail_df,clu
 
     df_results['id'] = df_id['value'].astype(int)
 
-    for num_cl in range(cl_num + 1):
-        keyword_label = labelling_clusters(df_results, cluster_num=num_cl, n=2)
+    for num_cl in range(clusters_amount + 1):
+        keyword_label = labelling_clusters(df_results, cluster_num=clusters_amount, n=2)
         cl_lables = ''.join(keyword_label)
-        df_results.loc[df_results.cluster == num_cl, 'labels'] = cl_lables
+        df_results.loc[df_results.cluster == clusters_amount, 'labels'] = cl_lables
 
     sentences1 = df_results.labels.to_list()
     sentences2 = df_results.keyword_eng.to_list()
@@ -344,7 +344,6 @@ def CLUSTERING_TRANSFOMERS_K_MEANS(processed_df, long_tail_df, short_tail_df,clu
     # Adding columns van original data to the results
     df_org = processed_df.drop(['keyword_eng'], axis=1)
     final_clusters = final_clusters.merge(df_org, on='id', how='left')
-    dic  = final_clusters
     LABELS  = A.index.values
 
 
