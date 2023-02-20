@@ -6,8 +6,9 @@
 import streamlit_authenticator as stauth
 import nltk
 import nltk_download_utils
+from googletrans import Translator
 import pandas as pd
-
+import time
 import warnings
 import datetime
 import numpy as np
@@ -50,6 +51,24 @@ date_string = now.strftime("%Y-%m-%d_%H-%M-%S")
 
 #### FUNCTIONS #####
 
+def translate_to_english(text_list):
+    # translator = Translator(service_urls=['translate.google.com'])
+    translator = Translator(service_urls=['translate.google.com'],
+                            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64)', proxies=None, timeout=None)
+    translated_text = []
+    count = 0
+    for text in text_list:
+        try:
+            result = translator.translate(text, dest='en').text
+            translated_text.append(result)
+            count += 1
+            if count % 1000 == 0:
+                print('time to sleep 5 sec')
+                time.sleep(5)
+        except Exception as e:
+            translated_text.append("Translation failed")
+    return translated_text
+
 # IMPORTANT FUNCTIONS:
 def data_preprocessing(df):
     # Make all column to lower case.
@@ -71,7 +90,9 @@ def data_preprocessing(df):
             # translate digits only.
             df["keyword"] = df["keyword"].apply(lambda x: 'digit-' + x if x.isdigit() else x)
             # print("The keywords are in the process of being translated to ENGLISH. Please hold on ... ")
-            df["keyword_eng"] = df["keyword"].apply(lambda x: GoogleTranslator(source='auto', target='en').translate(x))
+            my_list = df["Keyword"].to_list()
+            df["Keyword_eng"] = translate_to_english(my_list)
+            # df["keyword_eng"] = df["keyword"].apply(lambda x: GoogleTranslator(source='auto', target='en').translate(x))
             # remove the added prefix from the rows
             df["keyword_eng"] = df["keyword_eng"].apply(lambda x: x.replace("digit-", "") if x.startswith("digit-") else x)
             df["keyword"] = df["keyword"].apply(lambda x: x.replace("digit-", "") if x.startswith("digit-") else x)
@@ -101,6 +122,7 @@ def data_preprocessing(df):
     print(" *** There were {} SHORT TAIL keywords, and {} LONG TAIL keywords".format(short_tail_df.shape[0],
                                                                                      long_tail_df.shape[0]))
     return long_tail_df, short_tail_df, df_org
+
 
 
 def keyowrds_removal(df, list_to_remove):
