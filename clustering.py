@@ -90,9 +90,9 @@ def data_preprocessing(df):
             # translate digits only.
             df["keyword"] = df["keyword"].apply(lambda x: 'digit-' + x if x.isdigit() else x)
             # print("The keywords are in the process of being translated to ENGLISH. Please hold on ... ")
-            my_list = df["keyword"].to_list()
-            df["Keyword_eng"] = translate_to_english(my_list)
-            # df["keyword_eng"] = df["keyword"].apply(lambda x: GoogleTranslator(source='auto', target='en').translate(x))
+            # my_list = df["keyword"].to_list()
+            # df["Keyword_eng"] = translate_to_english(my_list)
+            df["keyword_eng"] = df["keyword"].apply(lambda x: GoogleTranslator(source='auto', target='en').translate(x))
             # remove the added prefix from the rows
             df["keyword_eng"] = df["keyword_eng"].apply(lambda x: x.replace("digit-", "") if x.startswith("digit-") else x)
             df["keyword"] = df["keyword"].apply(lambda x: x.replace("digit-", "") if x.startswith("digit-") else x)
