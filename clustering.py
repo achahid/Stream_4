@@ -123,8 +123,6 @@ def data_preprocessing(df):
                                                                                      long_tail_df.shape[0]))
     return long_tail_df, short_tail_df, df_org
 
-
-
 def keyowrds_removal(df, list_to_remove):
     for key in range(len(list_to_remove)):
         df['keyword_eng'] = df['keyword_eng'].str.replace(list_to_remove[key], '')
@@ -149,7 +147,6 @@ def stemmList(list):
         stemmed_list.append(key)
     return stemmed_list
 
-
 def labelling_clusters(df, cluster_num, n):
     df_cluster = df[df["cluster"] == cluster_num]
     keywords_list = df_cluster.keyword_eng.to_list()
@@ -172,7 +169,6 @@ def labelling_clusters(df, cluster_num, n):
     keywords = sorted(fdist, key=fdist.get, reverse=True)
     keywords_1 = [' '.join(keywords[:n])]
     return keywords_1
-
 
 def clusters_generator_cosine(df,  labels):
     print('*** Keyword clustering using SENTENCE TRANSFORMERS...')
@@ -211,7 +207,6 @@ def clusters_generator_cosine(df,  labels):
     dt = df.loc[df.groupby(['keyword_eng', 'id'])['semantic_score'].idxmax()]
     dt.sort_values('labels', inplace=True)
     return (dt)
-
 
 def CLUSTERING_K_MEANS(processed_df, long_tail_df, short_tail_df, start_cluster, end_cluster, steps, cutoff):
 
@@ -705,18 +700,20 @@ if st.session_state["authentication_status"]:
         keywords_df = pd.read_csv(uploaded_file_cl,encoding='latin-1')
         min_value = 2
         max_value = np.trunc(keywords_df.shape[0] - 2).astype(int)
+        long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
         st.dataframe(keywords_df)
 
 
     load_K_means = st.button('GENERATE CLUSTERS: K-MEANS' )
 
     if load_K_means:
+
         with st.spinner('**The K-MEANS clustering algorithm is currently in operation. Please hold on ...**'):
 
             model_name = 'all-MiniLM-L6-v2'
             model = SentenceTransformer(model_name)
 
-            long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
+            # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
             max_cluster = np.trunc(keywords_df.shape[0] * 0.1).astype(int)
             min_cluster = np.trunc(max_cluster / 2).astype(int)
             steps = np.trunc((max_cluster - min_cluster) / 3).astype(int)
@@ -775,7 +772,7 @@ if st.session_state["authentication_status"]:
 
             model = SentenceTransformer(selected_option)
 
-            long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
+            # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
             # max_cluster = np.trunc(keywords_df.shape[0] * 0.1).astype(int)
             cut_off = 0.5
 
