@@ -713,7 +713,7 @@ if st.session_state["authentication_status"]:
             model_name = 'all-MiniLM-L6-v2'
             model = SentenceTransformer(model_name)
 
-            # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
+            long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
             max_cluster = np.trunc(keywords_df.shape[0] * 0.1).astype(int)
             min_cluster = np.trunc(max_cluster / 2).astype(int)
             steps = np.trunc((max_cluster - min_cluster) / 3).astype(int)
