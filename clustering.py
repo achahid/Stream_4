@@ -672,18 +672,17 @@ if st.session_state["authentication_status"]:
     authenticator.logout("Logout","sidebar")
     st.sidebar.title(f'Welcome *{st.session_state["name"]}*')
     st.sidebar.text('version Jan 2023')
-    # pick_data_cl = st.checkbox(' SELECT KEYWORD DATA TO CLUSTER ')
-    #
-    # if pick_data_cl:
 
     st.warning("Please ensure that your data includes the column **KEYWORD** :eye-in-speech-bubble: ")
     uploaded_file_cl = st.file_uploader("Upload data", type=['csv'])
 
-
+    min_value = 0
+    max_value = 0
     if uploaded_file_cl is not None:
 
         keywords_df = pd.read_csv(uploaded_file_cl,encoding='latin-1')
-
+        min_value = 2
+        max_value = np.trunc(keywords_df.shape[0] - 2).astype(int)
         st.dataframe(keywords_df)
 
 
@@ -691,9 +690,6 @@ if st.session_state["authentication_status"]:
 
     if load_K_means:
         with st.spinner('**The K-MEANS clustering algorithm is currently in operation. Please hold on ...**'):
-            # nltk.download('stopwords')
-            # nltk.download('wordnet')
-            # nltk.download('punkt')
 
             model_name = 'all-MiniLM-L6-v2'
             model = SentenceTransformer(model_name)
@@ -742,6 +738,9 @@ if st.session_state["authentication_status"]:
 
     select_box = st.selectbox('Select a model Transformer', options=model_name)
     selected_option = option_to_model(select_box,option_models)
+    num_clusters = st.number_input(label = 'Insert amount of clusters', min_value = min_value, max_value = max_value)
+    num_clusters = int(num_clusters)
+    st.write('Amount of clusters is ', num_clusters)
 
     load_transformers = st.button('GENERATE CLUSTERS: TRANSFORMERS')
 
@@ -754,12 +753,12 @@ if st.session_state["authentication_status"]:
             model = SentenceTransformer(selected_option)
 
             long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
-            max_cluster = np.trunc(keywords_df.shape[0] * 0.1).astype(int)
+            # max_cluster = np.trunc(keywords_df.shape[0] * 0.1).astype(int)
             cut_off = 0.5
 
 
             data_list, labs = CLUSTERING_TRANSFOMERS_K_MEANS(processed_data, long_tail_df, short_tail_df,
-                                                             clusters_amount = max_cluster, cutoff = cut_off)
+                                                             clusters_amount = num_clusters, cutoff = cut_off)
 
             preffix = 'CLUSTER_id_'
             new_dict = {(preffix + str(key)): value for key, value in data_list.items()}
