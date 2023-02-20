@@ -700,7 +700,7 @@ if st.session_state["authentication_status"]:
         keywords_df = pd.read_csv(uploaded_file_cl,encoding='latin-1')
         min_value = 2
         max_value = np.trunc(keywords_df.shape[0] - 2).astype(int)
-        long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
+        # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
         st.dataframe(keywords_df)
 
 
@@ -772,7 +772,7 @@ if st.session_state["authentication_status"]:
 
             model = SentenceTransformer(selected_option)
 
-            # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
+            long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
             # max_cluster = np.trunc(keywords_df.shape[0] * 0.1).astype(int)
             cut_off = 0.5
 
