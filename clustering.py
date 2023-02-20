@@ -747,6 +747,7 @@ if st.session_state["authentication_status"]:
             </p>
             """, unsafe_allow_html=True)
             # st.balloons()
+
             st.dataframe(noisy_clusters)
             st.subheader("Download data")
             st.download_button(label='Download Results',
