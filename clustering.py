@@ -756,7 +756,7 @@ if st.session_state["authentication_status"]:
     selected_option = option_to_model(select_box,option_models)
     num_clusters = ste.number_input(label = 'Insert amount of clusters', min_value = min_value, max_value = max_value)
     num_clusters = int(num_clusters)
-    ste.write('Amount of clusters is ', num_clusters)
+    st.write('Amount of clusters is ', num_clusters)
 
     load_transformers = ste.button('GENERATE CLUSTERS: TRANSFORMERS')
 
