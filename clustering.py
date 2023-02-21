@@ -693,15 +693,14 @@ if st.session_state["authentication_status"]:
     st.warning("Please ensure that your data includes the column **KEYWORD** :eye-in-speech-bubble: ")
     uploaded_file_cl = st.file_uploader("Upload data", type=['csv'])
 
-    min_value = 0
+    min_value = 2
     max_value = 0
     if uploaded_file_cl is not None:
 
         keywords_df = pd.read_csv(uploaded_file_cl,encoding='latin-1')
-        min_value = 2
         max_value = np.trunc(keywords_df.shape[0] - 2).astype(int)
-        # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
-        st.dataframe(keywords_df)
+        long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
+        st.dataframe(processed_data)
 
 
     load_K_means = st.button('GENERATE CLUSTERS: K-MEANS' )
@@ -713,7 +712,7 @@ if st.session_state["authentication_status"]:
             model_name = 'all-MiniLM-L6-v2'
             model = SentenceTransformer(model_name)
 
-            long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
+            # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
             max_cluster = np.trunc(keywords_df.shape[0] * 0.1).astype(int)
             min_cluster = np.trunc(max_cluster / 2).astype(int)
             steps = np.trunc((max_cluster - min_cluster) / 3).astype(int)
