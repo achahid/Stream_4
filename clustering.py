@@ -707,7 +707,7 @@ if st.session_state["authentication_status"]:
 
     if load_K_means:
         long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
-        with ste.spinner('**The K-MEANS clustering algorithm is currently in operation. Please hold on ...**'):
+        with st.spinner('**The K-MEANS clustering algorithm is currently in operation. Please hold on ...**'):
 
             model_name = 'all-MiniLM-L6-v2'
             model = SentenceTransformer(model_name)
