@@ -699,14 +699,14 @@ if st.session_state["authentication_status"]:
 
         keywords_df = pd.read_csv(uploaded_file_cl,encoding='latin-1')
         max_value = np.trunc(keywords_df.shape[0] - 2).astype(int)
-        long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
-        st.dataframe(processed_data)
+        # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
+        st.dataframe(keywords_df)
 
 
     load_K_means = st.button('GENERATE CLUSTERS: K-MEANS' )
 
     if load_K_means:
-
+        long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
         with ste.spinner('**The K-MEANS clustering algorithm is currently in operation. Please hold on ...**'):
 
             model_name = 'all-MiniLM-L6-v2'
@@ -763,6 +763,7 @@ if st.session_state["authentication_status"]:
     if load_transformers and select_box != '<select>':
 
         st.write('You selected model:', selected_option)
+        long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
 
         with st.spinner('**The Model Transformers clustering algorithm is currently running. Please hold on...**'):
 
