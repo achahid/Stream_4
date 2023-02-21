@@ -758,7 +758,7 @@ if st.session_state["authentication_status"]:
     num_clusters = int(num_clusters)
     st.write('Amount of clusters is ', num_clusters)
 
-    load_transformers = ste.button('GENERATE CLUSTERS: TRANSFORMERS')
+    load_transformers = st.button('GENERATE CLUSTERS: TRANSFORMERS')
 
     if load_transformers and select_box != '<select>':
 
