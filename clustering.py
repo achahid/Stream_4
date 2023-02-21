@@ -769,10 +769,9 @@ if st.session_state["authentication_status"]:
 
             model = SentenceTransformer(selected_option)
 
-            long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
+            # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
             # max_cluster = np.trunc(keywords_df.shape[0] * 0.1).astype(int)
             cut_off = 0.5
-
 
             data_list, labs = CLUSTERING_TRANSFOMERS_K_MEANS(processed_data, long_tail_df, short_tail_df,
                                                              clusters_amount = num_clusters, cutoff = cut_off)
@@ -806,12 +805,6 @@ if st.session_state["authentication_status"]:
     # if st.download_button("Download results as CSV", score_model, "Clusters_transformers.csv", "text/csv",
     #                       key='download-tools-csv'):
     #     st.write("Download clicked!")
-
-
-
-
-
-
 
 
 
