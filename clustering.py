@@ -5,6 +5,7 @@
 
 import streamlit_authenticator as stauth
 import nltk
+import streamlit_ext as ste
 import nltk_download_utils
 from googletrans import Translator
 import pandas as pd
@@ -678,8 +679,7 @@ usernames = ['admin','ltulden', 'hgeginat', 'achahid','mreym','mpijl','nnguyen']
 passwords = ['io123#$','123#$123', '123#$123', '123#$123','123#$123','123#$123','123#$123']
 
 hashed_passwords = stauth.Hasher(passwords).generate()
-authenticator = stauth.Authenticate(names, usernames, hashed_passwords, 'some_cookie_name', 'some_signature_key',
-                                    cookie_expiry_days=30)
+authenticator = stauth.Authenticate(names, usernames, hashed_passwords, 'some_cookie_name', 'some_signature_key', cookie_expiry_days=30)
 name, authentication_status, username = authenticator.login('Login', 'sidebar')
 
 
@@ -707,7 +707,7 @@ if st.session_state["authentication_status"]:
 
     if load_K_means:
 
-        with st.spinner('**The K-MEANS clustering algorithm is currently in operation. Please hold on ...**'):
+        with ste.spinner('**The K-MEANS clustering algorithm is currently in operation. Please hold on ...**'):
 
             model_name = 'all-MiniLM-L6-v2'
             model = SentenceTransformer(model_name)
@@ -743,7 +743,7 @@ if st.session_state["authentication_status"]:
 
             st.dataframe(noisy_clusters)
             st.subheader("Download data")
-            st.download_button(label='Download Results',
+            ste.download_button(label='Download Results',
                                data=df_xlsx,
                                file_name='K_MEANS_clustering.xlsx')
 

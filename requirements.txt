@@ -1,4 +1,4 @@
-beautifulsoup4==4.11.2
+
 deep_translator==1.10.1
 googletrans==4.0.0rc1
 huggingface_hub==0.10.1
@@ -10,3 +10,4 @@ sentence_transformers==2.2.0
 streamlit==1.13.0
 streamlit_authenticator==0.1.5
 XlsxWriter==3.0.7
+streamlit_ext==0.1.5
