@@ -752,13 +752,13 @@ if st.session_state["authentication_status"]:
     model_name = ["<select>", "General Base", "General Roberta", "General miniML_L12", "General miniML_L6",
                   "Medics", "Education and training", "Finance"]
 
-    select_box = st.selectbox('Select a model Transformer', options=model_name)
+    select_box = ste.selectbox('Select a model Transformer', options=model_name)
     selected_option = option_to_model(select_box,option_models)
-    num_clusters = st.number_input(label = 'Insert amount of clusters', min_value = min_value, max_value = max_value)
+    num_clusters = ste.number_input(label = 'Insert amount of clusters', min_value = min_value, max_value = max_value)
     num_clusters = int(num_clusters)
-    st.write('Amount of clusters is ', num_clusters)
+    ste.write('Amount of clusters is ', num_clusters)
 
-    load_transformers = st.button('GENERATE CLUSTERS: TRANSFORMERS')
+    load_transformers = ste.button('GENERATE CLUSTERS: TRANSFORMERS')
 
     if load_transformers and select_box != '<select>':
 
