@@ -723,7 +723,8 @@ if st.session_state["authentication_status"]:
             # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
             max_cluster = np.trunc(keywords_df.shape[0] * 0.1).astype(int)
             min_cluster = np.trunc(max_cluster / 2).astype(int)
-            steps = np.trunc((max_cluster - min_cluster) / 3).astype(int)
+            step = np.trunc((max_cluster - min_cluster) / 3).astype(int)
+            steps = 1 if step == 0 else step
 
             cut_off = 0.5
             data_list, labs = CLUSTERING_K_MEANS(processed_data, long_tail_df, short_tail_df, start_cluster=min_cluster,
