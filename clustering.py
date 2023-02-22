@@ -353,9 +353,12 @@ def CLUSTERING_TRANSFOMERS_K_MEANS(processed_df, long_tail_df, short_tail_df,clu
     df_results.drop(['cluster'], inplace=True, axis=1)
     labels = df_results.labels.unique()
 
-    df_clusters = clusters_generator_cosine(short_tail_df, labels=labels)
-    clusters_short = df_clusters[df_results.columns.values.tolist()]
-    df_clusters_all = pd.concat([df_results, clusters_short], ignore_index=True)
+    if short_tail_df.shape[0] != 0:
+        df_clusters = clusters_generator_cosine(short_tail_df, labels=labels)
+        clusters_short = df_clusters[df_results.columns.values.tolist()]
+        df_clusters_all = pd.concat([df_results, clusters_short], ignore_index=True)
+    else:
+        df_clusters_all = df_results
     # Generating some statistics:
     z = df_clusters_all.groupby(['labels'])['semantic_score'].mean()
     A = z[z < cutoff]
