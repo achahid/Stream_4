@@ -760,8 +760,8 @@ if st.session_state["authentication_status"]:
     select_box = st.selectbox('Select a model Transformer', options=model_name)
     selected_option = option_to_model(select_box,option_models)
     min_value = 2
-    max_value = 3
-    num_clusters = st.number_input(label = 'Insert amount of clusters', min_value = 2, max_value = max_value)
+    # max_value = 3
+    num_clusters = st.number_input(label = 'Insert amount of clusters', min_value = 2)#, max_value = max_value)
     num_clusters = int(num_clusters)
     st.write('Amount of clusters is ', num_clusters)
 
