@@ -31,7 +31,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 warnings.simplefilter(action='ignore', category=FutureWarning)
 from sentence_transformers import SentenceTransformer, util
 
-#
 import xlsxwriter
 from io import BytesIO
 
@@ -129,14 +128,14 @@ def keyowrds_removal(df, list_to_remove):
         df['keyword_eng'] = df['keyword_eng'].str.replace(list_to_remove[key], '')
     return df
 
-def stemmList(list):
+def stemmList(my_list):
     # the stemmer requires a language parameter
     snow_stemmer = SnowballStemmer(language='english')
     # porter_stemmer = PorterStemmer()
 
     nltk.download('punkt')
     stemmed_list = []
-    for l in list:
+    for l in my_list:
         words = l.split(" ")
         stem_words = []
         # print(l)
@@ -153,19 +152,20 @@ def labelling_clusters(df, cluster_num, n):
     keywords_list = df_cluster.keyword_eng.to_list()
     words = [word_tokenize(i) for i in keywords_list]
     words_list = sum(words, [])
+
+    # Make the words singular
+    singular_words = [wnl.lemmatize(wrd) for wrd in words_list]
+    singular_words_lower = list(map(lambda x: x.lower(), singular_words))
+
     # Remove stop words
     stop_words = nltk.corpus.stopwords.words('english')
-    clean_words = [word for word in words_list if word not in stop_words]
+    clean_words = [word for word in singular_words_lower if word not in stop_words]
     clean_words_0 = [re.sub('[^a-zA-Z0-9]+', "", i) for i in clean_words]
     clean_words_1 = [item for item in clean_words_0 if not item.isdigit()]
     clean_words_2 = [x for x in clean_words_1 if x]
 
-    # Make the words singular
-    singular_words = [wnl.lemmatize(wrd) for wrd in clean_words_2]
-    singular_words_lower = list(map(lambda x: x.lower(), singular_words))
-
     # Calculate the frequency of each word
-    fdist = nltk.FreqDist(singular_words_lower)
+    fdist = nltk.FreqDist(clean_words_2)
     # Rank the words by frequency
     keywords = sorted(fdist, key=fdist.get, reverse=True)
     keywords_1 = [' '.join(keywords[:n])]
@@ -254,16 +254,18 @@ def CLUSTERING_K_MEANS(processed_df, long_tail_df, short_tail_df, start_cluster,
             y = []
             # Output the pairs with their score
             for i in range(len(sentences1)):
-                # print("{} \t\t {} \t\t Score: {:.4f}".format(sentences1[i], sentences2[i], cosine_scores[i][i]))
                 y.append(cosine_scores[i][i].item())
 
             df_results['semantic_score'] = y
 
             df_results.drop(['Keyword_ENG_stemmed', 'cluster'], inplace=True, axis=1)
             labels = df_results.labels.unique()
-            df_clusters = clusters_generator_cosine(short_tail_df, labels=labels)
-            clusters_short = df_clusters[df_results.columns.values.tolist()]
-            df_clusters_all = pd.concat([df_results, clusters_short], ignore_index=True)
+            if short_tail_df.shape[0] != 0 :
+                df_clusters = clusters_generator_cosine(short_tail_df, labels=labels)
+                clusters_short = df_clusters[df_results.columns.values.tolist()]
+                df_clusters_all = pd.concat([df_results, clusters_short], ignore_index=True)
+            else:
+                df_clusters_all = df_results
             # Generating some statistics:
             z = df_clusters_all.groupby(['labels'])['semantic_score'].mean()
             A = z[z < cutoff]
@@ -274,8 +276,6 @@ def CLUSTERING_K_MEANS(processed_df, long_tail_df, short_tail_df, start_cluster,
             dic[cl_num] = final_clusters
             LABELS[cl_num] = A.index.values
 
-            # print("DATA WITH {} CLUSTERS WAS GENERATED. HOWEVER CLUSTERS {} WERE NOISY".format(num_cl, A.index.values))
-            # logger.info(  "DATA WITH {} CLUSTERS WAS GENERATED. HOWEVER CLUSTERS {} WERE NOISY".format(num_cl, A.index.values))
 
         except Exception as e:
             print(e)
@@ -391,7 +391,6 @@ def re_classification(df, cut_off):
         print("There were no cases with a SEMANTIC SCORE lower than {}. Try a higher cutoff value ".format(cut_off))
         return df
 
-
 def topics_generator(df, df_clusters, clusters_labels):
     """
     This function is
@@ -437,7 +436,6 @@ def topics_generator(df, df_clusters, clusters_labels):
     print('*** GENERATING {} TOPICS USING AGGLOMERATIVE CLUSETERING '.format(topics))
     return df_clusters_final
 
-
 def re_scoring(df):
     sentences1 = df.TOPICS
     sentences2 = df.keyword_eng
@@ -461,14 +459,12 @@ def re_scoring(df):
 
     return (df)
 
-
 def info(df, cutoff):
     z = df.groupby(['cluster'])['Semantic_score'].mean()
     A = z[z < cutoff]
     # x = ("FOR THIS DATA, THE NEXT CLUSTERS {} WERE NOISY".format(A.index.values))
     x = A.index.values
     return (x)
-
 
 def dfs_xlsx(data_list):
     output = BytesIO()
@@ -720,11 +716,9 @@ if st.session_state["authentication_status"]:
             model_name = 'all-MiniLM-L6-v2'
             model = SentenceTransformer(model_name)
 
-            # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
-            max_cluster = np.trunc(keywords_df.shape[0] * 0.1).astype(int)
-            min_cluster = np.trunc(max_cluster / 2).astype(int)
-            step = np.trunc((max_cluster - min_cluster) / 3).astype(int)
-            steps = 1 if step == 0 else step
+            max_cluster = max(3,np.trunc(keywords_df.shape[0] * 0.1).astype(int))
+            min_cluster = max(1,np.trunc(max_cluster / 2).astype(int))
+            steps = max(1,np.trunc((max_cluster - min_cluster) / 3).astype(int))
 
             cut_off = 0.5
             data_list, labs = CLUSTERING_K_MEANS(processed_data, long_tail_df, short_tail_df, start_cluster=min_cluster,
@@ -772,7 +766,7 @@ if st.session_state["authentication_status"]:
     if load_transformers and select_box != '<select>':
 
         st.write('You selected model:', selected_option)
-        # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
+        long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
 
         with st.spinner('**The Model Transformers clustering algorithm is currently running. Please hold on...**'):
 
