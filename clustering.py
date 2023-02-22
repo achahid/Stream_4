@@ -706,7 +706,7 @@ if st.session_state["authentication_status"]:
         # # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
         # st.dataframe(keywords_df)
         keywords_df = pd.read_csv(uploaded_file_cl, encoding='latin-1')
-        long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
+        # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
         # data_download = convert_df(processed_data)
         # ste.download_button("Press to Download", data_download, "translated_data.csv")
 
@@ -714,7 +714,7 @@ if st.session_state["authentication_status"]:
     load_K_means = st.button('GENERATE CLUSTERS: K-MEANS' )
 
     if load_K_means:
-        # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
+        long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
         with st.spinner('**The K-MEANS clustering algorithm is currently in operation. Please hold on ...**'):
 
             model_name = 'all-MiniLM-L6-v2'
