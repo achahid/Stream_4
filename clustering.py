@@ -707,8 +707,8 @@ if st.session_state["authentication_status"]:
         # st.dataframe(keywords_df)
         keywords_df = pd.read_csv(uploaded_file_cl, encoding='latin-1')
         long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
-        data_download = convert_df(processed_data)
-        ste.download_button("Press to Download", data_download, "translated_data.csv")
+        # data_download = convert_df(processed_data)
+        # ste.download_button("Press to Download", data_download, "translated_data.csv")
 
 
     load_K_means = st.button('GENERATE CLUSTERS: K-MEANS' )
