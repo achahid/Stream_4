@@ -677,180 +677,180 @@ div.stButton > button:hover {
 
 
 # --- USER AUTHENTICATION ---
-names = ['User Unknown','Lars van Tulden', 'Helena Geginat', 'abdelhak chahid','Michael van den Reym','Mitchell Pijl','Nhu Nguyen']
-usernames = ['admin','ltulden', 'hgeginat', 'achahid','mreym','mpijl','nnguyen']
-passwords = ['io123#$','123#$123', '123#$123', '123#$123','123#$123','123#$123','123#$123']
+# names = ['User Unknown','Lars van Tulden', 'Helena Geginat', 'abdelhak chahid','Michael van den Reym','Mitchell Pijl','Nhu Nguyen']
+# usernames = ['admin','ltulden', 'hgeginat', 'achahid','mreym','mpijl','nnguyen']
+# passwords = ['io123#$','123#$123', '123#$123', '123#$123','123#$123','123#$123','123#$123']
+#
+# hashed_passwords = stauth.Hasher(passwords).generate()
+# authenticator = stauth.Authenticate(names, usernames, hashed_passwords, 'some_cookie_name', 'some_signature_key', cookie_expiry_days=30)
+# name, authentication_status, username = authenticator.login('Login', 'sidebar')
+#
+#
 
-hashed_passwords = stauth.Hasher(passwords).generate()
-authenticator = stauth.Authenticate(names, usernames, hashed_passwords, 'some_cookie_name', 'some_signature_key', cookie_expiry_days=30)
-name, authentication_status, username = authenticator.login('Login', 'sidebar')
+# if st.session_state["authentication_status"]:
+#
+#     authenticator.logout("Logout","sidebar")
+#     st.sidebar.title(f'Welcome *{st.session_state["name"]}*')
+#     st.sidebar.text('version Jan 2023')
+
+st.warning("Please ensure that your data includes the column **KEYWORD** :eye-in-speech-bubble: ")
+uploaded_file_cl = st.file_uploader("Upload data", type=['csv'])
 
 
+if uploaded_file_cl is not None:
 
-if st.session_state["authentication_status"]:
+    # keywords_df = pd.read_csv(uploaded_file_cl,encoding='latin-1')
+    # max_value = np.trunc(keywords_df.shape[0] - 2).astype(int)
+    # # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
+    # st.dataframe(keywords_df)
+    keywords_df = pd.read_csv(uploaded_file_cl, encoding='latin-1')
+    # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
+    # data_download = convert_df(processed_data)
+    # ste.download_button("Press to Download", data_download, "translated_data.csv")
 
-    authenticator.logout("Logout","sidebar")
-    st.sidebar.title(f'Welcome *{st.session_state["name"]}*')
-    st.sidebar.text('version Jan 2023')
 
-    st.warning("Please ensure that your data includes the column **KEYWORD** :eye-in-speech-bubble: ")
-    uploaded_file_cl = st.file_uploader("Upload data", type=['csv'])
+load_K_means = st.button('GENERATE CLUSTERS: K-MEANS' )
 
+if load_K_means:
+    long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
+    with st.spinner('**The K-MEANS clustering algorithm is currently in operation. Please hold on ...**'):
 
-    if uploaded_file_cl is not None:
+        model_name = 'all-MiniLM-L6-v2'
+        model = SentenceTransformer(model_name)
 
-        # keywords_df = pd.read_csv(uploaded_file_cl,encoding='latin-1')
-        # max_value = np.trunc(keywords_df.shape[0] - 2).astype(int)
-        # # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
-        # st.dataframe(keywords_df)
-        keywords_df = pd.read_csv(uploaded_file_cl, encoding='latin-1')
+        max_cluster = max(3,np.trunc(keywords_df.shape[0] * 0.1).astype(int))
+        min_cluster = max(1,np.trunc(max_cluster / 2).astype(int))
+        steps = max(1,np.trunc((max_cluster - min_cluster) / 3).astype(int))
+
+        cut_off = 0.5
+        data_list, labs = CLUSTERING_K_MEANS(processed_data, long_tail_df, short_tail_df, start_cluster=min_cluster,
+                                       end_cluster = max_cluster, steps=steps, cutoff=cut_off)
+
+        preffix = 'CLUSTER_id_'
+        new_dict = {(preffix + str(key)): value for key, value in data_list.items()}
+        data_list = new_dict
+
+        # generate PV tables statistics
+        DIC = {}
+        for key in data_list.keys():
+            # DIC[key] = data_list[key].groupby(['SUB_TOPICS']).size().reset_index(name='Amount_Keywords')
+            DIC[key] = data_list[key].groupby(['TOPICS', 'SUB_TOPICS'])['keyword'].size().reset_index(
+                name='Amount_Keywords')
+
+        suffix_pv = '_PV'
+        new_dict_pv = {(str(key) + suffix_pv): value for key, value in DIC.items()}
+        DIC = new_dict_pv
+
+        # aggregate the dictionaries
+        data_list.update(DIC)
+
+        # adding noisy clusters info
+        new_labs = {(preffix + str(key)): value for key, value in labs.items()}
+        labs = new_labs
+        noisy_clusters = pd.DataFrame.from_dict(labs, orient='index')
+        noisy_clusters = noisy_clusters.transpose()
+        noisy_clusters = noisy_clusters.fillna(value='')
+        data_list['Noisy_clusters'] = noisy_clusters
+
+        df_xlsx = dfs_xlsx(data_list)
+
+        st.write("""
+        <p style="background-color: #FEC929; color: black; padding: 10px;"> 
+        Further examination is recommended for the subsequent clusters..
+        </p>
+        """, unsafe_allow_html=True)
+        # st.balloons()
+
+        st.dataframe(noisy_clusters)
+        st.subheader("Download data")
+        ste.download_button(label='Download Results',
+                           data=df_xlsx,
+                           file_name='K_MEANS_clustering.xlsx')
+
+### TRANSFOMERS :
+
+model_name = ["<select>", "General Base", "General Roberta", "General miniML_L12", "General miniML_L6",
+              "Medics", "Education and training", "Finance"]
+
+select_box = st.selectbox('Select a model Transformer', options=model_name)
+selected_option = option_to_model(select_box,option_models)
+min_value = 2
+# max_value = 3
+num_clusters = st.number_input(label = 'Insert amount of clusters', min_value = 2)#, max_value = max_value)
+num_clusters = int(num_clusters)
+st.write('Amount of clusters is ', num_clusters)
+
+load_transformers = st.button('GENERATE CLUSTERS: TRANSFORMERS')
+
+if load_transformers and select_box != '<select>':
+
+    st.write('You selected model:', selected_option)
+    long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
+
+    with st.spinner('**The Model Transformers clustering algorithm is currently running. Please hold on...**'):
+
+        model = SentenceTransformer(selected_option)
+
         # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
-        # data_download = convert_df(processed_data)
-        # ste.download_button("Press to Download", data_download, "translated_data.csv")
+        # max_cluster = np.trunc(keywords_df.shape[0] * 0.1).astype(int)
+        cut_off = 0.5
 
+        data_list, labs = CLUSTERING_TRANSFOMERS_K_MEANS(processed_data, long_tail_df, short_tail_df,
+                                                         clusters_amount = num_clusters, cutoff = cut_off)
 
-    load_K_means = st.button('GENERATE CLUSTERS: K-MEANS' )
+        preffix = 'CLUSTER_id_'
+        new_dict = {(preffix + str(key)): value for key, value in data_list.items()}
+        data_list = new_dict
 
-    if load_K_means:
-        long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
-        with st.spinner('**The K-MEANS clustering algorithm is currently in operation. Please hold on ...**'):
+        # generate Pivot tables statistics
+        DIC = {}
+        for key in data_list.keys():
+            # DIC[key] = data_list[key].groupby(['SUB_TOPICS']).size().reset_index(name='Amount_Keywords')
+            DIC[key] = data_list[key].groupby(['TOPICS', 'SUB_TOPICS'])['keyword'].size().reset_index(
+                name='Amount_Keywords')
 
-            model_name = 'all-MiniLM-L6-v2'
-            model = SentenceTransformer(model_name)
+        suffix_pv = '_PV'
+        new_dict_pv = {(str(key) + suffix_pv): value for key, value in DIC.items()}
+        DIC = new_dict_pv
 
-            max_cluster = max(3,np.trunc(keywords_df.shape[0] * 0.1).astype(int))
-            min_cluster = max(1,np.trunc(max_cluster / 2).astype(int))
-            steps = max(1,np.trunc((max_cluster - min_cluster) / 3).astype(int))
+        # aggregate the dictionaries
+        data_list.update(DIC)
 
-            cut_off = 0.5
-            data_list, labs = CLUSTERING_K_MEANS(processed_data, long_tail_df, short_tail_df, start_cluster=min_cluster,
-                                           end_cluster = max_cluster, steps=steps, cutoff=cut_off)
+        # adding noisy clusters info
+        new_labs = {(preffix + str(key)): value for key, value in labs.items()}
+        labs = new_labs
+        noisy_clusters = pd.DataFrame.from_dict(labs, orient='index')
+        noisy_clusters = noisy_clusters.transpose()
+        noisy_clusters = noisy_clusters.fillna(value='')
+        data_list['Noisy_clusters'] = noisy_clusters
+        df_xlsx = dfs_xlsx(data_list)
 
-            preffix = 'CLUSTER_id_'
-            new_dict = {(preffix + str(key)): value for key, value in data_list.items()}
-            data_list = new_dict
+        st.write("""
+                    <p style="background-color: #FEC929; color: black; padding: 10px;">
+                    Further examination is recommended for the subsequent clusters..
+                    </p>
+                    """, unsafe_allow_html=True)
+        # st.balloons()
+        st.dataframe(noisy_clusters)
+        st.subheader("Download data")
+        ste.download_button(label='Download Results',
+                           data=df_xlsx,
+                           file_name='Transformers_clustering.xlsx')
 
-            # generate PV tables statistics
-            DIC = {}
-            for key in data_list.keys():
-                # DIC[key] = data_list[key].groupby(['SUB_TOPICS']).size().reset_index(name='Amount_Keywords')
-                DIC[key] = data_list[key].groupby(['TOPICS', 'SUB_TOPICS'])['keyword'].size().reset_index(
-                    name='Amount_Keywords')
-
-            suffix_pv = '_PV'
-            new_dict_pv = {(str(key) + suffix_pv): value for key, value in DIC.items()}
-            DIC = new_dict_pv
-
-            # aggregate the dictionaries
-            data_list.update(DIC)
-
-            # adding noisy clusters info
-            new_labs = {(preffix + str(key)): value for key, value in labs.items()}
-            labs = new_labs
-            noisy_clusters = pd.DataFrame.from_dict(labs, orient='index')
-            noisy_clusters = noisy_clusters.transpose()
-            noisy_clusters = noisy_clusters.fillna(value='')
-            data_list['Noisy_clusters'] = noisy_clusters
-
-            df_xlsx = dfs_xlsx(data_list)
-
-            st.write("""
-            <p style="background-color: #FEC929; color: black; padding: 10px;"> 
-            Further examination is recommended for the subsequent clusters..
-            </p>
-            """, unsafe_allow_html=True)
-            # st.balloons()
-
-            st.dataframe(noisy_clusters)
-            st.subheader("Download data")
-            ste.download_button(label='Download Results',
-                               data=df_xlsx,
-                               file_name='K_MEANS_clustering.xlsx')
-
-    ### TRANSFOMERS :
-
-    model_name = ["<select>", "General Base", "General Roberta", "General miniML_L12", "General miniML_L6",
-                  "Medics", "Education and training", "Finance"]
-
-    select_box = st.selectbox('Select a model Transformer', options=model_name)
-    selected_option = option_to_model(select_box,option_models)
-    min_value = 2
-    # max_value = 3
-    num_clusters = st.number_input(label = 'Insert amount of clusters', min_value = 2)#, max_value = max_value)
-    num_clusters = int(num_clusters)
-    st.write('Amount of clusters is ', num_clusters)
-
-    load_transformers = st.button('GENERATE CLUSTERS: TRANSFORMERS')
-
-    if load_transformers and select_box != '<select>':
-
-        st.write('You selected model:', selected_option)
-        long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
-
-        with st.spinner('**The Model Transformers clustering algorithm is currently running. Please hold on...**'):
-
-            model = SentenceTransformer(selected_option)
-
-            # long_tail_df, short_tail_df, processed_data = data_preprocessing(keywords_df)
-            # max_cluster = np.trunc(keywords_df.shape[0] * 0.1).astype(int)
-            cut_off = 0.5
-
-            data_list, labs = CLUSTERING_TRANSFOMERS_K_MEANS(processed_data, long_tail_df, short_tail_df,
-                                                             clusters_amount = num_clusters, cutoff = cut_off)
-
-            preffix = 'CLUSTER_id_'
-            new_dict = {(preffix + str(key)): value for key, value in data_list.items()}
-            data_list = new_dict
-
-            # generate PV tables statistics
-            DIC = {}
-            for key in data_list.keys():
-                # DIC[key] = data_list[key].groupby(['SUB_TOPICS']).size().reset_index(name='Amount_Keywords')
-                DIC[key] = data_list[key].groupby(['TOPICS', 'SUB_TOPICS'])['keyword'].size().reset_index(
-                    name='Amount_Keywords')
-
-            suffix_pv = '_PV'
-            new_dict_pv = {(str(key) + suffix_pv): value for key, value in DIC.items()}
-            DIC = new_dict_pv
-
-            # aggregate the dictionaries
-            data_list.update(DIC)
-
-            # adding noisy clusters info
-            new_labs = {(preffix + str(key)): value for key, value in labs.items()}
-            labs = new_labs
-            noisy_clusters = pd.DataFrame.from_dict(labs, orient='index')
-            noisy_clusters = noisy_clusters.transpose()
-            noisy_clusters = noisy_clusters.fillna(value='')
-            data_list['Noisy_clusters'] = noisy_clusters
-            df_xlsx = dfs_xlsx(data_list)
-
-            st.write("""
-                        <p style="background-color: #FEC929; color: black; padding: 10px;">
-                        Further examination is recommended for the subsequent clusters..
-                        </p>
-                        """, unsafe_allow_html=True)
-            # st.balloons()
-            st.dataframe(noisy_clusters)
-            st.subheader("Download data")
-            ste.download_button(label='Download Results',
-                               data=df_xlsx,
-                               file_name='Transformers_clustering.xlsx')
-
-    # st.subheader("Download data")
-    # score_model = results.to_csv(index=False).encode('utf-8')
-    # if st.download_button("Download results as CSV", score_model, "Clusters_transformers.csv", "text/csv",
-    #                       key='download-tools-csv'):
-    #     st.write("Download clicked!")
+# st.subheader("Download data")
+# score_model = results.to_csv(index=False).encode('utf-8')
+# if st.download_button("Download results as CSV", score_model, "Clusters_transformers.csv", "text/csv",
+#                       key='download-tools-csv'):
+#     st.write("Download clicked!")
 
 
 
-elif st.session_state["authentication_status"] == False:
-    st.error('Username/password is incorrect')
-
-
-if st.session_state["authentication_status"] == None:
-    st.warning('Please enter your username and password')
+# elif st.session_state["authentication_status"] == False:
+#     st.error('Username/password is incorrect')
+#
+#
+# if st.session_state["authentication_status"] == None:
+#     st.warning('Please enter your username and password')
 
 
 
