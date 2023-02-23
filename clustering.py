@@ -726,17 +726,32 @@ if st.session_state["authentication_status"]:
             data_list, labs = CLUSTERING_K_MEANS(processed_data, long_tail_df, short_tail_df, start_cluster=min_cluster,
                                            end_cluster = max_cluster, steps=steps, cutoff=cut_off)
 
-
-            preffix = 'CLUSTER_id_'# ff
+            preffix = 'CLUSTER_id_'
             new_dict = {(preffix + str(key)): value for key, value in data_list.items()}
             data_list = new_dict
 
+            # generate PV tables statistics
+            DIC = {}
+            for key in data_list.keys():
+                # DIC[key] = data_list[key].groupby(['SUB_TOPICS']).size().reset_index(name='Amount_Keywords')
+                DIC[key] = data_list[key].groupby(['TOPICS', 'SUB_TOPICS'])['keyword'].size().reset_index(
+                    name='Amount_Keywords')
+
+            suffix_pv = '_PV'
+            new_dict_pv = {(str(key) + suffix_pv): value for key, value in DIC.items()}
+            DIC = new_dict_pv
+
+            # aggregate the dictionaries
+            data_list.update(DIC)
+
+            # adding noisy clusters info
             new_labs = {(preffix + str(key)): value for key, value in labs.items()}
             labs = new_labs
             noisy_clusters = pd.DataFrame.from_dict(labs, orient='index')
             noisy_clusters = noisy_clusters.transpose()
             noisy_clusters = noisy_clusters.fillna(value='')
             data_list['Noisy_clusters'] = noisy_clusters
+
             df_xlsx = dfs_xlsx(data_list)
 
             st.write("""
@@ -787,6 +802,21 @@ if st.session_state["authentication_status"]:
             new_dict = {(preffix + str(key)): value for key, value in data_list.items()}
             data_list = new_dict
 
+            # generate PV tables statistics
+            DIC = {}
+            for key in data_list.keys():
+                # DIC[key] = data_list[key].groupby(['SUB_TOPICS']).size().reset_index(name='Amount_Keywords')
+                DIC[key] = data_list[key].groupby(['TOPICS', 'SUB_TOPICS'])['keyword'].size().reset_index(
+                    name='Amount_Keywords')
+
+            suffix_pv = '_PV'
+            new_dict_pv = {(str(key) + suffix_pv): value for key, value in DIC.items()}
+            DIC = new_dict_pv
+
+            # aggregate the dictionaries
+            data_list.update(DIC)
+
+            # adding noisy clusters info
             new_labs = {(preffix + str(key)): value for key, value in labs.items()}
             labs = new_labs
             noisy_clusters = pd.DataFrame.from_dict(labs, orient='index')
